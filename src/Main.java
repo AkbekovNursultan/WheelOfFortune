@@ -7,35 +7,70 @@ public class Main {
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
         Random ran = new Random();
-        String[] words = {"PARROT", "WATER", "COSMOS", "SPIDER", "FLY", "MONACO", "LIGHT", "PAPAOUTAI", "DONATELLO"};
-        String chosenWord = words[ran.nextInt(0, words.length)];
+        String[] words = {"PARROT", "COSMOS", "SPIDER", "FLY", "MONACO", "LIGHT", "PAPAOUTAI", "MADAGASCAR"};
+        String[] wordsHints = {"For a long time people that this animal could talk", "Cold, Far and Lonely place",
+                            "Falsely, considered insect by many", "Annoying", "Country inside France",
+                            "This word is can be used as noun, adjective and verb without changing it",
+                            "The most popular song of artist Stromae", "Lion, zebra, hippo and giraffe"};
+        ArrayList<String>  playersList = new ArrayList<>();
+        playersList = addPlayers(playersList, sc);
+        ArrayList<Integer> playersScore = new ArrayList<>();
+        int randomChoice = ran.nextInt(0, words.length);
+        String chosenWord = words[randomChoice];
+        String chosenWordHint = wordsHints[randomChoice];
         System.out.println(chosenWord);
+        //
         char[] correctLetters = chosenWord.toCharArray();
         char[] hiddenLetters = new char[correctLetters.length];
         Arrays.fill(hiddenLetters, '*');
-        while(true){
-            System.out.println("Guess the letter: ");
+        int playerTurn = 0;
+        while(true) {
+            if (playerTurn == playersList.size()) {
+                playerTurn = 0;
+            }
+            System.out.println("          Your turn " + playersList.get(playerTurn) + "!\n");
+            drawGameBoard(correctLetters, hiddenLetters, chosenWordHint);
+            System.out.println("          Make your guess: ");
             String guessWord = sc.next();
-            if(guessWord.length() < 2) {
+            cleanScreen();
+            if (guessWord.length() < 2) {
                 char guess = guessWord.charAt(0);
-                showLetter(correctLetters, hiddenLetters, guess);
-            }else {
-                if(guessWord.toUpperCase().equals(chosenWord)){
-                    System.out.println("Hooray");
+                playerTurn = checkGuess(correctLetters, hiddenLetters, guess, playerTurn);
+            } else {
+                if (guessWord.toUpperCase().equals(chosenWord)) {
+                    System.out.println("Congratulations, " + playersList.get(playerTurn) + "! You have guessed the word!");
+                    showTheAnswer(correctLetters);
+
                     System.exit(0);
+                } else {
+                    System.out.println("Nice try, but that is not our hidden word.");
                 }
             }
         }
-
     }
-    static void showLetter(char[] correctLetters,char[] hiddenLetters, char guess){
-        int lettersFound = 0;
-        for(int i = 0; i < correctLetters.length; i++){
-            if(Character.toUpperCase(guess) == correctLetters[i]){
-                hiddenLetters[i] = correctLetters[i];
-                lettersFound++;
-            }
+    static ArrayList<String> addPlayers(ArrayList<String> playersList, Scanner sc){
+        System.out.println("Enter the number of players: ");
+        int playersListSize = sc.nextInt();
+        sc.nextLine();
+        for(int i = 0; i < playersListSize; i++){
+            System.out.println("Player " + (i+1) + ": ");
+            playersList.add(sc.nextLine());
         }
+        return makeNewOrder(playersList);
+    }
+    static ArrayList<String> makeNewOrder(ArrayList<String> playersList){
+        ArrayList<String> newOrder = new ArrayList<>();
+        Random ran = new Random();
+        while(playersList.size() > 0){
+            int playerOrder = ran.nextInt(playersList.size());
+            newOrder.add(playersList.get(playerOrder));
+            playersList.remove(playerOrder);
+        }
+        return newOrder;
+    }
+    //static void showScoreboard(ArrayList<String> playersList, ArrayList<Integer> playersScore){}
+
+    static void drawGameBoard(char[] correctLetters, char[] hiddenLetters, String chosenWordHint){
         for (char hiddenLetter : hiddenLetters) {
             System.out.print("  " + hiddenLetter + "     ");
         }
@@ -44,29 +79,46 @@ public class Main {
             System.out.print("=====   ");
         }
         System.out.println();
+        System.out.println("Hint: " + chosenWordHint);
         System.out.println();
-        if(lettersFound == 0){
-            System.out.println("There is no '"+ Character.toUpperCase(guess)+ "' in this word.");
+    }
+    static int checkGuess(char[] correctLetters,char[] hiddenLetters, char guess, int playerTurn) {
+        int lettersFound = 0;
+        for (int i = 0; i < correctLetters.length; i++) {
+            if (Character.toUpperCase(guess) == correctLetters[i] && hiddenLetters[i] != Character.toUpperCase(guess)) {
+                hiddenLetters[i] = correctLetters[i];
+                lettersFound++;
+            } else if (Character.toUpperCase(guess) == hiddenLetters[i]) {
+                System.out.println("This letter was already guessed!\n");
+                lettersFound = -1;
+                break;
+            }
+        }
+        if(Arrays.equals(correctLetters, hiddenLetters)){
+            showTheAnswer(correctLetters);
+            System.exit(0);
+        }else if(lettersFound == 0){
+            System.out.println("There is no '"+ Character.toUpperCase(guess)+ "' in this word.\n");
+            playerTurn++;
         } else if(lettersFound == 1) {
-            System.out.println("There is 1 '" + Character.toUpperCase(guess) + "' letter!");
-        } else{
-            System.out.println("There are " + lettersFound + " '" + Character.toUpperCase(guess) + "' letters in this word!");
+            System.out.println("There is 1 '" + Character.toUpperCase(guess) + "' letter!\n+100 points");
+        } else if(lettersFound > 1){
+            System.out.println("There are " + lettersFound + " '" + Character.toUpperCase(guess) + "' letters in this word!\n+" + (lettersFound * 100) + " points");
         }
-
+        return playerTurn;
     }
-    static void emptyBox(){
-        for(int i = 0; i < 10; i++){
-            System.out.print(" ");
+    static void showTheAnswer(char[] correctLetters){
+        for (char correctLetter : correctLetters) {
+            System.out.print("  " + correctLetter + "     ");
         }
-
-    }
-    static void drawLines(char[] correctLetters){
-        for(int i = 0; i < correctLetters.length; i++){
+        System.out.println();
+        for (int i = 0; i < correctLetters.length; i++) {
             System.out.print("=====   ");
         }
-        System.out.println();
     }
+    static void finishGame(){
 
+    }
 
     static void cleanScreen(){
         System.out.print("\033[H\033[2J");
